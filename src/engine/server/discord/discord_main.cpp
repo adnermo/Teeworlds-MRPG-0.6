@@ -8,16 +8,23 @@
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
-DiscordJob::DiscordJob(IServer* pServer) : SleepyDiscord::DiscordClient(g_Config.m_SvDiscordToken, SleepyDiscord::USER_CONTROLED_THREADS)
+DiscordJob::DiscordJob(IServer* pServer)
 {
 	m_pServer = pServer;
-	setIntents(SleepyDiscord::Intent::SERVER_MESSAGES);
-	
-	std::thread(&DiscordJob::run, this).detach(); // start thread discord event bot
-	std::thread(&DiscordJob::HandlerThreadTasks, this).detach(); // start handler bridge teeworlds - discord bot
+
+    m_Bot = new dpp::cluster(g_Config.m_SvDiscordToken, dpp::i_all_intents);
+
+    m_Bot->on_ready([this](const dpp::ready_t& event){ onReady(event);});
+
+	std::thread([this]{m_Bot->start(false);}).detach(); // start thread discord bot
 }
 
-void DiscordJob::onReady(SleepyDiscord::Ready readyData)
+DiscordJob::~DiscordJob()
+{
+    delete m_Bot;
+}
+
+void DiscordJob::onReady(const dpp::ready_t& readyData)
 {
 	DiscordCommands::InitCommands(this);
 }

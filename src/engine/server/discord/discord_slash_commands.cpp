@@ -13,12 +13,13 @@ std::map < std::string, int > DiscordCommands::ms_HelpCmdPage;
 
 void DiscordCommands::InitCommands(DiscordJob* pDiscord)
 {
-	std::vector<SleepyDiscord::AppCommand> aDiscordCmd(pDiscord->getGlobalAppCommands(g_Config.m_SvDiscordApplicationID));
-	auto CommandRegisteredID = [&aDiscordCmd](const char* pCmd) -> std::string
-	{
-		const auto pItem = std::find_if(aDiscordCmd.begin(), aDiscordCmd.end(), [pCmd](const SleepyDiscord::AppCommand& pDiscordCmd) { return pDiscordCmd.name == pCmd; });
-		return pItem != aDiscordCmd.end() ? pItem->ID : "\0";
-	};
+    {
+        auto CommandsMap = pDiscord->Bot()->global_commands_get_sync();
+        std::vector<Command> aDiscordCmd(CommandsMap.size());
+        for(const auto& command : CommandsMap) {
+            aDiscordCmd.push_back({command.first ,command.second});
+        }
+    }
 
 	#define REG_DCMD(argsnum, name, argsformat, desc, callback, flags) \
 		RegisterCommand<argsnum>(pDiscord, CommandRegisteredID(name), name, argsformat, desc, callback, flags)
@@ -302,7 +303,7 @@ void DiscordCommands::CmdAvatar(SleepyDiscord::Interaction* pInteraction, Discor
 /*  Engine commands                                                     */
 /************************************************************************/
 template<size_t ArrSize>
-void DiscordCommands::RegisterCommand(DiscordJob* pDiscord, std::string CommandID, const char* pName, const char* pArgs, const char* pDesc, CommandCallback pCallback, int FlagType)
+void DiscordCommands::RegisterCommand(DiscordJob* pDiscord, const char* pName, const char* pArgs, const char* pDesc, CommandCallback pCallback, int FlagType)
 {
 	Command NewCommand;
 	str_copy(NewCommand.m_aCommand, pName, sizeof(NewCommand.m_aCommand));
@@ -317,7 +318,7 @@ void DiscordCommands::RegisterCommand(DiscordJob* pDiscord, std::string CommandI
 		int StringPos = 0;
 		size_t HandledOption = 0;
 		bool RequiredOption = true;
-		std::array<SleepyDiscord::AppCommand::Option, ArrSize> Option;
+		std::array<dpp::command_option, ArrSize> Option;
 		while(*pArgs)
 		{
 			if(HandledOption >= ArrSize)
@@ -331,33 +332,33 @@ void DiscordCommands::RegisterCommand(DiscordJob* pDiscord, std::string CommandI
 			else if(*pArgs == 'u')
 			{
 				Option.at(HandledOption).description = std::to_string(HandledOption + 1) + ". person that you want.";
-				Option.at(HandledOption).type = SleepyDiscord::AppCommand::Option::Type::USER;
+				Option.at(HandledOption).type = dpp::command_option_type::co_user;
 			}
 			else if(*pArgs == 'b')
 			{
 				Option.at(HandledOption).description = std::to_string(HandledOption + 1) + ". select 1 - yes / 0 - no.";
-				Option.at(HandledOption).type = SleepyDiscord::AppCommand::Option::Type::BOOLEAN;
+                Option.at(HandledOption).type = dpp::command_option_type::co_boolean;
 			}
 			else if(*pArgs == 'i')
 			{
 				Option.at(HandledOption).description = std::to_string(HandledOption + 1) + ". enter a number.";
-				Option.at(HandledOption).type = SleepyDiscord::AppCommand::Option::Type::INTEGER;
-			}
+                Option.at(HandledOption).type = dpp::command_option_type::co_integer;
+            }
 			else if(*pArgs == 'c')
 			{
 				Option.at(HandledOption).description = std::to_string(HandledOption + 1) + ". select a channel.";
-				Option.at(HandledOption).type = SleepyDiscord::AppCommand::Option::Type::CHANNEL;
-			}
+                Option.at(HandledOption).type = dpp::command_option_type::co_channel;
+            }
 			else if(*pArgs == 'r')
 			{
 				Option.at(HandledOption).description = std::to_string(HandledOption + 1) + ". select a role.";
-				Option.at(HandledOption).type = SleepyDiscord::AppCommand::Option::Type::ROLE;
-			}
+                Option.at(HandledOption).type = dpp::command_option_type::co_role;
+            }
 			else if(*pArgs == 's')
 			{
 				Option.at(HandledOption).description = std::to_string(HandledOption + 1) + ". enter text.";
-				Option.at(HandledOption).type = SleepyDiscord::AppCommand::Option::Type::STRING;
-			}
+                Option.at(HandledOption).type = dpp::command_option_type::co_string;
+            }
 			else if(*pArgs == '[')
 			{
 				char aName[64];
@@ -371,7 +372,7 @@ void DiscordCommands::RegisterCommand(DiscordJob* pDiscord, std::string CommandI
 			{
 				if(RequiredOption)
 				{
-					Option.at(HandledOption).isRequired = RequiredOption;
+					Option.at(HandledOption).required = RequiredOption;
 					RequiredOption = false;
 				}
 				HandledOption++;
@@ -382,7 +383,7 @@ void DiscordCommands::RegisterCommand(DiscordJob* pDiscord, std::string CommandI
 
 		dbg_msg("discord_command", "%s %s is performed", RequiresUpdate ? "updating" : "registration", pName);
 		if(RequiresUpdate)
-			pDiscord->editGlobalAppCommand(g_Config.m_SvDiscordApplicationID, CommandID, pName, pDesc, Option);
+			pDiscord->Bot()->global_command_edit(CommandID, pName, pDesc, Option);
 		else
 			pDiscord->createGlobalAppCommand(g_Config.m_SvDiscordApplicationID, pName, pDesc, Option);
 		sleep_pause(500); // pause for disable many requests to discord api

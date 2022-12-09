@@ -15,21 +15,21 @@ enum
 class DiscordCommands
 {
 	friend class DiscordJob;
-	typedef void (*CommandCallback)(SleepyDiscord::Interaction*, class DiscordJob*, bool ResponseUpdate);
+	typedef void (*CommandCallback)(dpp::interaction*, class DiscordJob*, bool ResponseUpdate);
 
 	/************************************************************************/
 	/*  Important commands                                                  */
 	/************************************************************************/
 	static std::map<std::string, int> ms_HelpCmdPage;
-	static void CmdHelp(SleepyDiscord::Interaction* , class DiscordJob*, bool ResponseUpdate);
-	static void CmdConnect(SleepyDiscord::Interaction*, class DiscordJob*, bool ResponseUpdate);
-	static void CmdWebsites(SleepyDiscord::Interaction*, class DiscordJob*, bool ResponseUpdate);
+	static void CmdHelp(dpp::interaction* , class DiscordJob*, bool ResponseUpdate);
+	static void CmdConnect(dpp::interaction*, class DiscordJob*, bool ResponseUpdate);
+	static void CmdWebsites(dpp::interaction*, class DiscordJob*, bool ResponseUpdate);
 
 
 	/************************************************************************/
 	/*  Game server commands                                                */
 	/************************************************************************/
-	static void CmdOnline(SleepyDiscord::Interaction*, class DiscordJob*, bool ResponseUpdate);
+	static void CmdOnline(dpp::interaction*, class DiscordJob*, bool ResponseUpdate);
 	static void CmdStats(SleepyDiscord::Interaction*, class DiscordJob*, bool ResponseUpdate);
 	static void CmdRanking(SleepyDiscord::Interaction*, class DiscordJob*, bool ResponseUpdate);
 
@@ -51,10 +51,8 @@ class DiscordCommands
 public:
 	struct Command
 	{
-		char m_aCommand[32];
-		char m_aCommandDesc[256];
-		int m_TypeFlag;
-		CommandCallback m_pCallback;
+        dpp::snowflake Id;
+        dpp::slashcommand Command;
 	};
 
 	static void InitCommands(class DiscordJob* pDiscord);

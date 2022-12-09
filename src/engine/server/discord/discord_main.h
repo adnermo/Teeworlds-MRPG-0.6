@@ -5,14 +5,18 @@
 
 #ifdef CONF_DISCORD
 
-#include <sleepy_discord/websocketpp_websocket.h>
+#include <dpp/dpp.h>
+#include <dpp/event.h>
 
 typedef std::function<void()> DiscordTask;
-class DiscordJob final : public SleepyDiscord::DiscordClient
+class DiscordJob
 {
+    dpp::cluster* m_Bot;
 public:
-	using SleepyDiscord::DiscordClient::DiscordClient;
 	DiscordJob(class IServer* pServer);
+	~DiscordJob();
+
+    dpp::cluster* Bot() {return m_Bot;};
 
 private:
 	/************************************************************************/
@@ -21,7 +25,9 @@ private:
 	void onAddMember(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID, SleepyDiscord::ServerMember member) override;
 	void onMessage(SleepyDiscord::Message message) override;
 	void onInteraction(SleepyDiscord::Interaction interaction) override;
-	void onReady(SleepyDiscord::Ready readyData) override;
+	void onReady(const dpp::ready_t& readyData);
+
+    };
 
 	/************************************************************************/
 	/* Discord main functions                                               */
